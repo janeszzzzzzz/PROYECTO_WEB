@@ -1,0 +1,52 @@
+[
+    {
+        "device_type": "switch",
+        "error": "Failed to authenticate: Bad authentication type; allowed types: ['publickey', 'keyboard-interactive']",
+        "hostname": "192.168.1.1",
+        "interfaces": {},
+        "mgmt_ip": "192.168.1.1",
+        "modelo": "UNKNOWN",
+        "serial": "UNKNOWN",
+        "version": "UNKNOWN"
+    },
+    {
+        "device_type": "switch",
+        "error": "[Errno None] Unable to connect to port 22 on 192.168.1.11",
+        "hostname": "192.168.1.11",
+        "interfaces": {},
+        "mgmt_ip": "192.168.1.11",
+        "modelo": "UNKNOWN",
+        "serial": "UNKNOWN",
+        "version": "UNKNOWN"
+    },
+    {
+        "device_type": "switch",
+        "error": "[Errno None] Unable to connect to port 22 on 192.168.1.12",
+        "hostname": "192.168.1.12",
+        "interfaces": {},
+        "mgmt_ip": "192.168.1.12",
+        "modelo": "UNKNOWN",
+        "serial": "UNKNOWN",
+        "version": "UNKNOWN"
+    },
+    {
+        "device_type": "router",
+        "error": "[Errno None] Unable to connect to port 22 on 192.168.1.254",
+        "hostname": "192.168.1.254",
+        "interfaces": {},
+        "mgmt_ip": "192.168.1.254",
+        "modelo": "UNKNOWN",
+        "serial": "UNKNOWN",
+        "version": "UNKNOWN"
+    },
+    {
+        "device_type": "router",
+        "error": "timed out",
+        "hostname": "10.0.0.2",
+        "interfaces": {},
+        "mgmt_ip": "10.0.0.2",
+        "modelo": "UNKNOWN",
+        "serial": "UNKNOWN",
+        "version": "UNKNOWN"
+    }
+]

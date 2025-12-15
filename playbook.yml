@@ -1,0 +1,98 @@
+---
+- name: Recolectar info de switches y routers Cisco (salida JSON)
+  hosts: all
+  gather_facts: no
+  vars:
+    # Cambia esta ruta según donde quieras el JSON; en WSL usa /mnt/c/...
+    ruta_json: "/mnt/c/PROYECTO_WEB/dispositivos.json"
+
+  tasks:
+
+    - name: Obtener facts (hardware + interfaces)
+      cisco.ios.ios_facts:
+        gather_subset:
+          - hardware
+          - interfaces
+      register: datos
+      ignore_errors: yes
+
+    - name: Inicializar host_info con valores por defecto (local)
+      set_fact:
+        host_info:
+          hostname: "{{ datos.ansible_facts.ansible_net_hostname | default(inventory_hostname) }}"
+          mgmt_ip: "{{ inventory_hostname }}"
+          device_type: >-
+            {{
+              'switch'
+              if (inventory_hostname in groups['switches'] | default([]))
+              else
+              ('router' if (inventory_hostname in groups['routers'] | default([])) else 'unknown')
+            }}
+          version: "{{ datos.ansible_facts.ansible_net_version | default('UNKNOWN') }}"
+          serial:  "{{ datos.ansible_facts.ansible_net_serialnum | default('UNKNOWN') }}"
+          modelo:  "{{ datos.ansible_facts.ansible_net_model | default('UNKNOWN') }}"
+          interfaces: {}
+
+
+    - name: Agregar interfaces (sólo si ios_facts produjo interfaces)
+      set_fact:
+        host_info: >-
+          {{
+            host_info | combine({
+              'interfaces': (
+                (host_info.interfaces|default({})) |
+                combine({
+                  item.key:
+                    ( (item.value.ipv4[0].address)
+                        if (item.value.ipv4 is defined and (item.value.ipv4|length) > 0)
+                        else 'NO_IP'
+                    )
+                })
+              )
+            })
+          }}
+      loop: "{{ datos.ansible_facts.ansible_net_interfaces | default({}) | dict2items }}"
+      when: datos is defined and datos.ansible_facts is defined
+      # Si datos falló, este bloque se salta y host_info queda con interfaces={}
+
+    - name: Marcar error de conexión si ios_facts falló
+      set_fact:
+        host_info: >-
+          {{
+            host_info | combine({
+              'error': datos.msg | default('connection error'),
+              'interfaces': {}
+            })
+          }}
+      when: datos is defined and (datos.failed or datos is failed)
+
+
+
+    - name: Guardar host_info como fact persistente para control node (en hostvars)
+      set_fact:
+        host_info: "{{ host_info }}"
+
+    
+
+- name: Consolidar todos los host_info y escribir JSON en control node
+  hosts: localhost
+  gather_facts: no
+  vars:
+   vars:
+  ruta_json: "/home/janet/proyecto_ansible/dispositivos.json"
+  tasks:
+    - name: Recolectar host_info de todos los hosts
+      set_fact:
+        all_info: >-
+          {{
+            groups['all']
+            | map('extract', hostvars, 'host_info')
+            | select('defined')
+            | list
+          }}
+
+    - name: Escribir JSON final en ruta deseada (sobreescribe)
+      copy:
+        content: "{{ all_info | to_nice_json }}"
+        dest: "{{ ruta_json }}"
+        mode: '0644'

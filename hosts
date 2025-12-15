@@ -1,0 +1,38 @@
+all:
+  vars:
+    ansible_host_key_checking: false
+    ansible_connection: network_cli
+    ansible_network_os: cisco.ios.ios
+    ansible_become: yes
+    ansible_become_method: enable
+
+    # esto lo dejamos global porque no depende del equipo
+    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    ansible_command_timeout: 60
+    ansible_ssh_timeout: 40
+
+  children:
+
+    switches:
+      hosts:
+        192.168.1.1:
+          ansible_user: cisco
+          ansible_password: cisco99
+
+        192.168.1.11:
+          ansible_user: cisco
+          ansible_password: cisco99
+
+        192.168.1.12:
+          ansible_user: cisco
+          ansible_password: cisco99
+
+    routers:
+      hosts:
+        192.168.1.254:
+          ansible_user: cisco
+          ansible_password: cisco99
+
+        10.0.0.2:
+          ansible_user: cisco
+          ansible_password: cisco99

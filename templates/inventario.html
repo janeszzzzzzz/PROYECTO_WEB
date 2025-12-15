@@ -1,0 +1,205 @@
+<!-- <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventario de Red</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Inventario de Dispositivos</h1>
+
+    <button class="btn btn-primary mb-3" onclick="generarInventario()">
+        Generar inventario
+    </button>
+
+    <div id="estado" class="mb-3"></div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Hostname</th>
+                <th>Modelo</th>
+                <th>Serial</th>
+                <th>IOS</th>
+                <th>Interfaces con IP</th>
+            </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+
+<script>
+async function generarInventario() {
+    document.getElementById("estado").innerText = "⏳ Generando inventario...";
+    document.getElementById("tabla").innerHTML = "";
+
+    const res = await fetch("/api/inventario/generar", { method: "POST" });
+    const json = await res.json();
+
+    if (!res.ok) {
+        document.getElementById("estado").innerText = "❌ Error";
+        alert(JSON.stringify(json, null, 2));
+        return;
+    }
+
+    document.getElementById("estado").innerText = "✔ Inventario generado";
+
+    json.devices.forEach(d => {
+        let ips = Object.entries(d.interfaces || {})
+            .filter(([_, ip]) => ip !== "NO_IP")
+            .map(([ifn, ip]) => `${ifn}: ${ip}`)
+            .join("<br>");
+
+        document.getElementById("tabla").innerHTML += `
+            <tr>
+                <td>${d.hostname}</td>
+                <td>${d.modelo}</td>
+                <td>${d.serial}</td>
+                <td>${d.version}</td>
+                <td>${ips || "-"}</td>
+            </tr>
+        `;
+    });
+}
+</script>
+
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventario</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Inventario de Dispositivos</h1>
+    <button class="btn btn-primary" onclick="generar()">Generar inventario</button>
+  </div>
+  <div class="row mb-3">
+  <div class="col">
+    <input id="buscar_ip" class="form-control" placeholder="Buscar por IP">
+  </div>
+  <div class="col">
+    <input id="buscar_host" class="form-control" placeholder="Buscar por hostname">
+  </div>
+  <div class="col">
+    <button class="btn btn-secondary" onclick="buscar()">Buscar</button>
+    <button class="btn btn-outline-secondary" onclick="cargarTodo()">Ver todo</button>
+  </div>
+</div>
+
+
+  <div id="estado" class="mb-3 text-muted">Aún no generas inventario</div>
+
+  <div class="card shadow">
+    <div class="card-body">
+      <table class="table table-bordered table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Hostname</th>
+            <th>Modelo</th>
+            <th>Serial</th>
+            <th>IOS</th>
+            <th>Interfaces con IP</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody id="tabla">
+          <tr><td colspan="6" class="text-muted">Sin datos</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function renderTabla(data){
+  const tbody = document.getElementById("tabla");
+  tbody.innerHTML = "";
+
+  if (!data || data.length === 0){
+    tbody.innerHTML = `<tr><td colspan="6" class="text-muted">Sin datos</td></tr>`;
+    return;
+  }
+
+  for (const d of data){
+    const ifs = d.interfaces_ip || {};
+    let ifHtml = "-";
+    const keys = Object.keys(ifs);
+
+    if (keys.length > 0){
+      ifHtml = "<ul class='mb-0'>";
+      for (const k of keys){
+        ifHtml += `<li><b>${k}</b>: ${ifs[k]}</li>`;
+      }
+      ifHtml += "</ul>";
+    }
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${d.hostname || "-"}</td>
+        <td>${d.modelo || "-"}</td>
+        <td>${d.serial || "-"}</td>
+        <td>${d.version || "-"}</td>
+        <td>${ifHtml}</td>
+        <td class="text-danger">${d.error || ""}</td>
+      </tr>
+    `;
+  }
+}
+
+async function generar(){
+  document.getElementById("estado").innerText = "⏳ Generando inventario (ansible)...";
+
+  const r = await fetch("/api/inventario/generar", { method:"POST" });
+  const j = await r.json();
+
+  if (!r.ok || !j.ok){
+    document.getElementById("estado").innerText = "❌ Error al generar";
+    alert((j && (j.error || j.stderr)) ? (j.error || j.stderr) : "Error desconocido");
+    return;
+  }
+
+  document.getElementById("estado").innerText = "✔ Inventario generado";
+  renderTabla(j.data);
+}
+</script>
+<script>
+async function cargarTodo(){
+  const r = await fetch("/api/inventario/devices");
+  const j = await r.json();
+  renderTabla(j);
+}
+
+async function buscar(){
+  const ip = document.getElementById("buscar_ip").value.trim();
+  const host = document.getElementById("buscar_host").value.trim();
+
+  let url = "";
+
+  if (ip){
+    url = `/api/inventario/buscar/ip/${ip}`;
+  } else if (host){
+    url = `/api/inventario/buscar/hostname/${host}`;
+  } else {
+    alert("Ingresa IP o hostname");
+    return;
+  }
+
+  const r = await fetch(url);
+  const j = await r.json();
+  renderTabla(j);
+}
+</script>
+
+</body>
+</html>

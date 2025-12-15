@@ -1,0 +1,6 @@
+flask
+pymysql
+werkzeug
+ansible
+paramiko
+jinja2

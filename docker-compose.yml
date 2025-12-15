@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: mariadb:11
+    container_name: proyecto_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: proyecto_web
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  web:
+    build: .
+    container_name: proyecto_web
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: proyecto_web
+    volumes:
+      - .:/app
+    command: python app.py
+
+volumes:
+  mariadb_data:
