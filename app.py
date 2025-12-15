@@ -391,6 +391,9 @@ import builtins, sys, io, traceback
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET", "dev_secret_cambialo")
+app.config["DEBUG"] = True
+app.config["PROPAGATE_EXCEPTIONS"] = True
+
 
 inventario = {}
 

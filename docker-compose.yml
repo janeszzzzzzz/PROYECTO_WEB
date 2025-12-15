@@ -1,4 +1,4 @@
-# version: "3.9"
+version: "3.9"
 
 # services:
 
@@ -34,7 +34,6 @@
 
 # volumes:
 #   mariadb_data:
-
 services:
   web:
     build: .
@@ -51,14 +50,15 @@ services:
 
   db:
     image: mariadb:11
-    container_name: proyecto_db
     environment:
+      FLASK_ENV: production
+      FLASK_DEBUG: 0
       MARIADB_DATABASE: proyecto_web
       MARIADB_USER: webuser
       MARIADB_PASSWORD: webpass123
       MARIADB_ROOT_PASSWORD: rootpass
     volumes:
       - mariadb_data:/var/lib/mysql
-
+      - ./db_init:/docker-entrypoint-initdb.d
 volumes:
   mariadb_data:
