@@ -4,3 +4,7 @@ werkzeug
 ansible
 paramiko
 jinja2
+textfsm
+netmiko
+
+
